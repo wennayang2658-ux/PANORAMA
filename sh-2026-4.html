@@ -1,0 +1,581 @@
+<html lang="en" vid="0"><head vid="1">
+<meta charset="UTF-8" vid="2">
+<meta name="viewport" content="width=device-width, initial-scale=1.0" vid="3">
+<title vid="4">SH-2026-4</title>
+<script src="https://cdn.tailwindcss.com/3.4.17" vid="5"></script>
+<script src="https://d3js.org/d3.v7.min.js" vid="6"></script>
+<script src="https://unpkg.com/topojson-client@3" vid="7"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js" vid="8"></script>
+<style vid="10">
+  @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500&display=swap');
+
+  :root {
+    --bg-color: #F1EFEB; 
+    --text-primary: #111111; 
+    --text-muted: #777777;
+    --line-color: #111111;
+  }
+
+  body {
+    background-color: var(--bg-color);
+    color: var(--text-primary);
+    font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', 'Noto Sans SC', sans-serif;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+  }
+
+  .font-mono {
+    font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', 'Noto Sans SC', 'Courier Prime', monospace;
+  }
+
+  .font-sans {
+    font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', 'Noto Sans SC', sans-serif;
+  }
+
+  .filter-btn {
+    position: relative;
+    padding-bottom: 4px;
+    color: var(--text-muted);
+    transition: color 0.3s ease;
+  }
+
+  .filter-btn.active {
+    color: var(--text-primary);
+  }
+
+  .filter-btn::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 0%;
+    height: 1px;
+    background-color: var(--line-color);
+    transition: width 0.3s ease;
+  }
+
+  .filter-btn.active::after, .filter-btn:hover::after {
+    width: 100%;
+  }
+
+  /* 响应式网格基底 */
+  .layout-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    padding: 1rem;
+    gap: 1.5rem;
+    min-height: 100vh;
+  }
+
+  @media (min-width: 1024px) {
+    .layout-grid {
+      grid-template-columns: 80px 1fr 440px 80px;
+      grid-template-rows: auto 1fr auto;
+      height: 100vh;
+      padding: 2rem;
+      gap: 2rem;
+      overflow: hidden;
+    }
+  }
+
+  .header-nav {
+    grid-column: 1 / -1;
+  }
+  @media (min-width: 1024px) {
+    .header-nav {
+      grid-column: 2 / 4;
+      grid-row: 1 / 2;
+    }
+  }
+
+  /* 异步轴向双列联动容器 */
+  .scroll-sync-container {
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 2rem;
+  }
+  @media (min-width: 1024px) {
+    .scroll-sync-container {
+      grid-column: 2 / 4;
+      grid-row: 2 / 3;
+      display: grid;
+      grid-template-columns: 1fr 440px;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-right: 1rem;
+    }
+  }
+
+  .bottom-text {
+    grid-column: 1 / -1;
+    padding-top: 1rem;
+  }
+  @media (min-width: 1024px) {
+    .bottom-text {
+      grid-column: 2 / 4;
+      grid-row: 3 / 4;
+      padding-top: 0;
+    }
+  }
+
+  .scroll-sync-container::-webkit-scrollbar {
+    width: 4px;
+  }
+  .scroll-sync-container::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scroll-sync-container::-webkit-scrollbar-thumb {
+    background: rgba(17,17,17,0.2);
+    border-radius: 2px;
+  }
+
+  .country {
+    fill: rgba(0, 0, 0, 0.02);
+    stroke: var(--line-color);
+    stroke-width: 0.5px;
+    stroke-opacity: 0.2;
+    transition: fill 0.3s ease;
+  }
+  .country:hover { fill: rgba(0, 0, 0, 0.05); }
+
+  .province {
+    fill: rgba(0, 0, 0, 0.015);
+    stroke: var(--line-color);
+    stroke-width: 0.3px;
+    stroke-opacity: 0.15;
+    transition: all 0.3s ease;
+    opacity: 0;
+    pointer-events: none;
+  }
+  .province.visible { opacity: 1; pointer-events: auto; }
+  .province:hover { fill: rgba(0, 0, 0, 0.06); }
+
+  .graticule {
+    fill: none;
+    stroke: var(--line-color);
+    stroke-width: 0.2px;
+    stroke-opacity: 0.1;
+  }
+
+  .project-marker {
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .project-marker-dot {
+    fill: var(--bg-color);
+    stroke: var(--line-color);
+    stroke-width: 2px;
+    transition: all 0.3s ease;
+  }
+  .project-marker-ring {
+    fill: none;
+    stroke: var(--line-color);
+    stroke-width: 1px;
+    opacity: 0;
+    transition: all 0.3s ease;
+  }
+  .project-marker.active .project-marker-dot,
+  .project-marker:hover .project-marker-dot {
+    fill: var(--text-primary);
+  }
+  .project-marker.active .project-marker-ring {
+    opacity: 0.5;
+    transform: scale(2);
+  }
+
+  .project-label {
+    font-family: 'Inter', 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', 'Noto Sans SC', 'Courier Prime', monospace;
+    font-size: 10px;
+    fill: var(--text-primary);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s ease;
+  }
+  .project-marker:hover .project-label,
+  .project-marker.active .project-label {
+    opacity: 1;
+  }
+
+  #project-details {
+    opacity: 0.3;
+    pointer-events: none;
+    transition: opacity 0.4s ease;
+  }
+  #project-details.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* 沉浸式灯箱移动端优化 */
+  .lightbox {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(241, 239, 235, 0.95);
+    backdrop-filter: blur(20px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .lightbox.active { opacity: 1; visibility: visible; }
+  .lightbox-content {
+    position: relative;
+    max-width: 95vw;
+    max-height: 80vh;
+  }
+  .lightbox-img {
+    max-width: 100%;
+    max-height: 80vh;
+    object-fit: contain;
+    border-radius: 8px;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.1);
+    transform: scale(0.9);
+    transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  }
+  .lightbox.active .lightbox-img { transform: scale(1); }
+
+  .lightbox-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+    background: transparent;
+    border: 1px solid var(--line-color);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    font-family: 'Courier Prime', monospace;
+    font-size: 10px;
+    color: var(--text-primary);
+    z-index: 1010;
+  }
+  @media (min-width: 768px) {
+    .lightbox-close { top: 2rem; right: 2rem; width: 48px; height: 48px; font-size: 14px; }
+  }
+  .lightbox-close:hover { background: var(--text-primary); color: var(--bg-color); }
+
+  .lightbox-caption {
+    position: absolute;
+    bottom: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    font-family: 'Courier Prime', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    width: 100%;
+    text-align: center;
+  }
+
+  .lightbox-nav {
+    position: absolute;
+    bottom: 1rem;
+    width: 48px;
+    height: 48px;
+    background: transparent;
+    border: 1px solid var(--line-color);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    color: var(--text-primary);
+    z-index: 1010;
+  }
+  @media (min-width: 768px) {
+    .lightbox-nav { top: 50%; bottom: auto; transform: translateY(-50%); width: 56px; height: 56px; }
+  }
+  .lightbox-nav:hover { background: var(--text-primary); color: var(--bg-color); }
+
+  .lightbox-prev { left: 1rem; }
+  @media (min-width: 768px) { .lightbox-prev { left: 2rem; } }
+
+  .lightbox-next { right: 1rem; }
+  @media (min-width: 768px) { .lightbox-next { right: 2rem; } }
+</style>
+</head>
+<body class="overflow-x-hidden lg:overflow-hidden w-screen min-h-screen" vid="11">
+
+<div class="layout-grid" vid="12">
+
+  <header class="header-nav flex justify-between items-start pt-4" vid="13">
+    <div class="text-xs uppercase tracking-[0.3em] font-medium leading-relaxed" vid="14">
+      Panorama<br vid="15">空间建设全景图
+    </div>
+    <div class="flex gap-8 font-sans text-sm tracking-[0.1em]" vid="16">
+      <a href="index.html" class="filter-btn" vid="17">← 返回主页</a>
+    </div>
+  </header>
+
+  <div class="scroll-sync-container" id="scroll-container" vid="18">
+    
+    <main class="relative w-full" id="photo-gallery" vid="19">
+      <div class="flex flex-col gap-6 lg:gap-8 pb-8" id="gallery-container" vid="20">
+        <div class="photo-item cursor-pointer group" data-index="0" vid="21">
+          <div class="relative overflow-hidden rounded-[12px] lg:rounded-[20px]" vid="22">
+            <img src="https://cdn.jsdelivr.net/gh/wennayang2658-ux/PANORAMA@main/sh-2026-4-1.jpg" alt="ON-SITE PHOTO 1" class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105" vid="23" data-caption="ON-SITE PHOTO 1">
+          </div>
+          <p class="mt-3 font-mono text-[10px] tracking-[0.15em] text-[#777777] uppercase" vid="24">ON-SITE PHOTO 1</p>
+        </div>
+        <div class="photo-item cursor-pointer group" data-index="1" vid="25">
+          <div class="relative overflow-hidden rounded-[12px] lg:rounded-[20px]" vid="26">
+            <img src="https://cdn.jsdelivr.net/gh/wennayang2658-ux/PANORAMA@main/sh-2026-4-2.jpg" alt="ON-SITE PHOTO 2" class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105" vid="27" data-caption="ON-SITE PHOTO 2">
+          </div>
+          <p class="mt-3 font-mono text-[10px] tracking-[0.15em] text-[#777777] uppercase" vid="28">ON-SITE PHOTO 2</p>
+        </div>
+        <div class="photo-item cursor-pointer group" data-index="2" vid="29">
+          <div class="relative overflow-hidden rounded-[12px] lg:rounded-[20px]" vid="30">
+            <img src="https://cdn.jsdelivr.net/gh/wennayang2658-ux/PANORAMA@main/sh-2026-4-3.jpg" alt="ON-SITE PHOTO 3" class="w-full h-auto object-cover transition-transform duration-700 group-hover:scale-105" vid="31" data-caption="ON-SITE PHOTO 3">
+          </div>
+          <p class="mt-3 font-mono text-[10px] tracking-[0.15em] text-[#777777] uppercase" vid="32">ON-SITE PHOTO 3</p>
+        </div>
+      </div>
+    </main>
+
+    <aside class="flex flex-col lg:pl-8 active pb-6 w-full" id="project-details" vid="33">
+      <div class="font-sans text-[0.65rem] uppercase tracking-[0.4em] mb-4 lg:mb-6 text-[#777777]" vid="34">
+        P R O J E C T &nbsp; D E T A I L S
+      </div>
+      <h1 class="font-sans text-3xl lg:text-5xl leading-[1.1] font-bold tracking-[-0.02em] mb-6 lg:mb-10 whitespace-pre-line" id="p-title" vid="35">
+        哈密大楼<br vid="36">Dynaudio Lounge
+      </h1>
+      
+      <div class="h-[1px] w-full bg-[#111111] mb-6 lg:mb-8" vid="37"></div>
+      
+      <div class="grid grid-cols-2 gap-x-6 gap-y-6 lg:gap-y-8" vid="38">
+        <div class="flex flex-col" vid="39">
+          <span class="text-[0.6rem] uppercase tracking-[0.2em] text-[#777777] mb-2" vid="40">Location</span>
+          <span class="font-sans text-sm" id="p-loc" vid="41">上海, CN</span>
+        </div>
+        <div class="flex flex-col" vid="42">
+          <span class="text-[0.6rem] uppercase tracking-[0.2em] text-[#777777] mb-2" vid="43">Target Date</span>
+          <span class="font-mono text-sm" id="p-date" vid="44">2026/12/~</span>
+        </div>
+        <div class="flex flex-col" vid="45">
+          <span class="text-[0.6rem] uppercase tracking-[0.2em] text-[#777777] mb-2" vid="46">Status</span>
+          <span class="font-sans text-sm" id="p-status" vid="47">设计中</span>
+        </div>
+        <div class="flex flex-col" vid="48">
+          <span class="text-[0.6rem] uppercase tracking-[0.2em] text-[#777777] mb-2" vid="49">ID</span>
+          <span class="font-mono text-sm" id="p-id" vid="50">SH-2026-4</span>
+        </div>
+      </div>
+
+      <div class="mt-6 lg:mt-8 flex-shrink-0" vid="51">
+        <span class="text-[0.6rem] uppercase tracking-[0.2em] text-[#777777] mb-2 block" vid="52">Address</span>
+        <span class="font-sans text-sm leading-relaxed" id="p-address" vid="53">上海市黄浦区圆明园路149号外滩</span>
+      </div>
+
+      <div class="mt-6 lg:mt-8 flex-shrink-0" vid="54">
+        <span class="text-[0.6rem] uppercase tracking-[0.2em] text-[#777777] mb-3 block" vid="55">Description</span>
+        <div class="pr-2" vid="56">
+          <p class="text-[0.85rem] leading-[1.8] text-[#444444] font-sans" vid="57">
+            设计合同已完成内部审核处于签批阶段，概念和方案设计进行中，计划6中旬完成阶段验收。
+          </p>
+        </div>
+      </div>
+    </aside>
+
+  </div>
+
+  <div class="bottom-text flex flex-col sm:flex-row justify-between items-start sm:items-end pb-4 font-mono text-[0.85rem] gap-2" vid="58">
+    <div class="tracking-[0.1em]" id="p-coords" vid="59">LAT 31.241959 N &nbsp; LON 121.487984 E</div>
+  </div>
+
+</div>
+
+<div class="lightbox" id="lightbox" vid="60">
+  <button class="lightbox-close" id="lightbox-close" vid="61">CLOSE</button>
+  <button class="lightbox-nav lightbox-prev" id="lightbox-prev" vid="62">←</button>
+  <button class="lightbox-nav lightbox-next" id="lightbox-next" vid="63">→</button>
+  <div class="lightbox-content" vid="64">
+    <img src="" alt="" class="lightbox-img" id="lightbox-img" vid="65">
+  </div>
+  <p class="lightbox-caption" id="lightbox-caption" vid="66"></p>
+</div>
+
+<script vid="67">
+  const galleryPhotos = [
+    { src: "https://cdn.jsdelivr.net/gh/wennayang2658-ux/PANORAMA@main/sh-2026-4-1.jpg", caption: "ON-SITE PHOTO 1" },
+    { src: "https://cdn.jsdelivr.net/gh/wennayang2658-ux/PANORAMA@main/sh-2026-4-2.jpg", caption: "ON-SITE PHOTO 2" },
+    { src: "https://cdn.jsdelivr.net/gh/wennayang2658-ux/PANORAMA@main/sh-2026-4-3.jpg", caption: "ON-SITE PHOTO 3" }
+  ];
+  let currentLightboxIndex = 0;
+  let chinaProvinces = null;
+  let currentZoomScale = 1;
+  let activeProjectId = "SH-2026-4";
+
+  const projects = {
+    "SH-2026-4": { id: "SH-2026-4", loc: "SHANGHAI, CN", coords: [121.487984, 31.241959] }
+  };
+
+  function updateDetailsPanel(id) {
+    const detailPanel = document.getElementById('project-details');
+    if(detailPanel) detailPanel.classList.add('active');
+  }
+
+  const lightbox = document.getElementById('lightbox');
+  const lightboxImg = document.getElementById('lightbox-img');
+  const lightboxCaption = document.getElementById('lightbox-caption');
+  const lightboxClose = document.getElementById('lightbox-close');
+  const lightboxPrev = document.getElementById('lightbox-prev');
+  const lightboxNext = document.getElementById('lightbox-next');
+
+  function openLightbox(index) {
+    currentLightboxIndex = index;
+    const photo = galleryPhotos[index];
+    lightboxImg.src = photo.src;
+    lightboxCaption.textContent = photo.caption;
+    lightbox.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+
+  function showPrev() {
+    currentLightboxIndex = (currentLightboxIndex - 1 + galleryPhotos.length) % galleryPhotos.length;
+    const photo = galleryPhotos[currentLightboxIndex];
+    lightboxImg.src = photo.src;
+    lightboxCaption.textContent = photo.caption;
+  }
+
+  function showNext() {
+    currentLightboxIndex = (currentLightboxIndex + 1) % galleryPhotos.length;
+    const photo = galleryPhotos[currentLightboxIndex];
+    lightboxImg.src = photo.src;
+    lightboxCaption.textContent = photo.caption;
+  }
+
+  document.querySelectorAll('.photo-item').forEach((item, index) => {
+    item.addEventListener('click', () => openLightbox(index));
+  });
+
+  lightboxClose.addEventListener('click', closeLightbox);
+  lightboxPrev.addEventListener('click', (e) => { e.stopPropagation(); showPrev(); });
+  lightboxNext.addEventListener('click', (e) => { e.stopPropagation(); showNext(); });
+  lightbox.addEventListener('click', (e) => { if (e.target === lightbox) closeLightbox(); });
+
+  document.addEventListener('keydown', (e) => {
+    if (!lightbox.classList.contains('active')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowLeft') showPrev();
+    if (e.key === 'ArrowRight') showNext();
+  });
+
+  // 安全检测并渲染 D3 拓扑图层
+  const container = document.getElementById('map-container');
+  if (container) {
+    const width = container.clientWidth;
+    const height = container.clientHeight;
+
+    const svg = d3.select("#map-container")
+      .append("svg")
+      .attr("width", "100%")
+      .attr("height", "100%")
+      .attr("viewBox", `0 0 ${width} ${height}`)
+      .style("cursor", "grab");
+
+    const g = svg.append("g");
+    const projection = d3.geoMercator().scale(width / 6.5).translate([width / 2, height / 1.6]); 
+    const path = d3.geoPath().projection(projection);
+    const graticule = d3.geoGraticule();
+    g.append("path").datum(graticule).attr("class", "graticule").attr("d", path);
+
+    const zoom = d3.zoom()
+      .scaleExtent([1, 12])
+      .translateExtent([[-width, -height], [width * 2, height * 2]])
+      .on("zoom", (event) => {
+        g.attr("transform", event.transform);
+        const currentScale = event.transform.k;
+        currentZoomScale = currentScale;
+        
+        g.selectAll(".project-marker-dot").attr("stroke-width", 2 / currentScale).attr("r", 4 / currentScale);
+        g.selectAll(".project-marker-ring").attr("stroke-width", 1 / currentScale).attr("r", 12 / currentScale);
+        
+        g.selectAll(".project-label")
+          .style("font-size", `${Math.max(4, 10 / Math.sqrt(currentScale))}px`)
+          .attr("dy", `${-10 / currentScale}px`);
+        
+        if (currentScale > 3.5 && chinaProvinces) {
+          g.selectAll(".province").classed("visible", true);
+          g.selectAll(".country[data-china='true']").style("opacity", "0.3");
+        } else {
+          g.selectAll(".province").classed("visible", false);
+          g.selectAll(".country[data-china='true']").style("opacity", "1");
+        }
+      });
+
+    svg.call(zoom);
+
+    Promise.all([
+      d3.json("https://cdn.jsdelivr.net/npm/world-atlas@2/countries-110m.json"),
+      d3.json("https://geojson.cn/api/data/china.json").catch(() => {
+        return axios.get("https://cdn.jsdelivr.net/gh/anhulife/d3-china-map@master/src/json/china.json").then(res => res.data);
+      }).catch(() => null)
+    ]).then(([world, chinaData]) => {
+      const chinaCountryId = 156; 
+      g.selectAll(".country")
+        .data(topojson.feature(world, world.objects.countries).features)
+        .enter().append("path")
+        .attr("class", "country")
+        .attr("data-china", d => d.id === chinaCountryId || d.properties.name === "China" ? "true" : "false")
+        .attr("d", path);
+
+      if (chinaData) {
+        chinaProvinces = chinaData;
+        g.selectAll(".province")
+          .data(chinaData.features || [])
+          .enter().append("path")
+          .attr("class", "province")
+          .attr("d", path);
+      }
+
+      const projectArray = Object.values(projects);
+      const markers = g.selectAll(".project-marker")
+        .data(projectArray)
+        .enter().append("g")
+        .attr("class", d => `project-marker ${d.id === activeProjectId ? 'active' : ''}`)
+        .attr("transform", d => `translate(${projection(d.coords)[0]},${projection(d.coords)[1]})`)
+        .on("click", (event, d) => {
+          if (event.defaultPrevented) return;
+          activeProjectId = d.id;
+          g.selectAll(".project-marker").classed("active", false);
+          d3.select(event.currentTarget).classed("active", true);
+          updateDetailsPanel(d.id);
+        });
+
+      markers.append("circle").attr("class", "project-marker-ring").attr("r", 12);
+      markers.append("circle").attr("class", "project-marker-dot").attr("r", 4);
+      markers.append("text").attr("class", "project-label").attr("dy", "-10px").attr("text-anchor", "middle").text(d => d.loc.split(',')[0]);
+      
+      updateDetailsPanel(activeProjectId);
+    });
+
+    window.addEventListener('resize', () => {
+      const newWidth = container.clientWidth;
+      const newHeight = container.clientHeight;
+      svg.attr("viewBox", `0 0 ${newWidth} ${newHeight}`);
+    });
+
+    const zoomInBtn = document.getElementById('zoom-in');
+    const zoomOutBtn = document.getElementById('zoom-out');
+    if(zoomInBtn) zoomInBtn.addEventListener('click', () => svg.transition().duration(300).call(zoom.scaleBy, 1.5));
+    if(zoomOutBtn) zoomOutBtn.addEventListener('click', () => svg.transition().duration(300).call(zoom.scaleBy, 0.667));
+  }
+</script>
+</body>
+</html>

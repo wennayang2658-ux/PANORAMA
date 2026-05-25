@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Global Initiatives - Project Portfolio</title>
+  <script src="https://cdn.tailwindcss.com/3.4.17"></script>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500&display=swap');
+
+    :root {
+      --bg-color: #F1EFEB; 
+      --text-primary: #111111; 
+      --text-muted: #777777;
+      --line-color: #111111;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+    }
+
+    .font-mono {
+      font-family: 'Inter', 'Courier Prime', system-ui, -apple-system, sans-serif;
+    }
+
+    .filter-btn {
+      position: relative;
+      padding-bottom: 4px;
+      color: var(--text-muted);
+      transition: color 0.3s ease;
+    }
+
+    .filter-btn.active {
+      color: var(--text-primary);
+    }
+
+    .filter-btn::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 0%;
+      height: 1px;
+      background-color: var(--line-color);
+      transition: width 0.3s ease;
+    }
+
+    .filter-btn.active::after {
+      width: 100%;
+    }
+
+    /* 桌面端 Grid 布局 */
+    .layout-grid {
+      display: grid;
+      grid-template-columns: 80px 1fr 440px 80px;
+      grid-template-rows: 100px 1fr 100px;
+      height: 100vh;
+      padding: 2rem;
+      gap: 2rem;
+    }
+
+    .header-nav { grid-column: 2 / 4; grid-row: 1 / 2; }
+    .map-stage { grid-column: 2 / 3; grid-row: 2 / 3; }
+    .sidebar-panel { grid-column: 3 / 4; grid-row: 2 / 3; }
+    .bottom-text { grid-column: 2 / 4; grid-row: 3 / 4; }
+
+    /* 移动端 响应式适配优化 */
+    @media (max-width: 1024px) {
+      .layout-grid {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        padding: 1.5rem;
+        gap: 1.5rem;
+        overflow-y: auto;
+      }
+      
+      .header-nav { order: 1; flex-shrink: 0; }
+      .map-stage { order: 2; flex-shrink: 0; height: 40vh; min-height: 300px; }
+      .sidebar-panel { order: 3; flex: 1; min-height: 0; padding-left: 0; padding-top: 0.5rem; }
+      .bottom-text { order: 4; flex-shrink: 0; }
+    }
+
+    .project-list-item {
+      border-bottom: 1px solid rgba(17, 17, 17, 0.08);
+      transition: all 0.3s ease;
+    }
+
+    .project-list-item:hover {
+      background: rgba(0,0,0,0.015);
+    }
+
+    .project-list-item.highlighted {
+      background: rgba(17, 17, 17, 0.04);
+      animation: highlightPulse 1.5s ease-out;
+    }
+
+    @keyframes highlightPulse {
+      0% { background: rgba(17, 17, 17, 0.08); }
+      100% { background: rgba(17, 17, 17, 0.04); }
+    }
+
+    .zoom-btn {
+      background: var(--bg-color);
+      border: 1px solid var(--line-color);
+      color: var(--text-primary);
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-family: 'Courier Prime', monospace;
+    }
+
+    .zoom-btn:hover { background: var(--text-primary); color: var(--bg-color); }
+    
+    .status-badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 100px;
+      font-size: 8px;
+      letter-spacing: 0.1em;
+      font-weight: 700;
+    }
+
+    .badge-active { background: #111111; color: #F1EFEB; }
+    .badge-completed { border: 1px solid #111111; color: #111111; }
+    .badge-archived { background: transparent; color: #777777; border: 1px solid #777777; }
+
+    .scrollbar-none::-webkit-scrollbar { display: none; }
+    
+    .section-divider {
+      font-family: 'Inter', 'Courier Prime', monospace;
+      font-size: 10px;
+      padding: 12px 16px;
+      margin-top: 24px;
+      border-bottom: 1px solid #111111;
+      display: flex;
+      justify-content: space-between;
+      letter-spacing: 0.1em;
+      border-radius: 6px; /* 增加精致的小圆角 */
+    }
+
+    .leaflet-container {
+      background-color: transparent !important;
+      font-family: 'Inter', sans-serif;
+    }
+    
+    .leaflet-tooltip.custom-leaflet-tooltip {
+      background-color: #111111;
+      border: 1px solid rgba(255,255,255,0.1);
+      color: #F1EFEB;
+      border-radius: 6px;
+      padding: 16px;
+      font-family: 'Inter', 'Courier Prime', sans-serif;
+      box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.4);
+      opacity: 1 !important;
+      min-width: 200px;
+    }
+    
+    .leaflet-tooltip-top.custom-leaflet-tooltip::before {
+      border-top-color: #111111;
+    }
+    
+    .tooltip-title {
+      font-weight: 500;
+      font-size: 14px;
+      margin-bottom: 12px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.15);
+      letter-spacing: 0.05em;
+    }
+    
+    .tooltip-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      font-family: 'Courier Prime', monospace;
+      font-size: 10px;
+      color: #999999;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    
+    .tooltip-row span:last-child { color: #F1EFEB; text-align: right; }
+    .leaflet-interactive { transition: r 0.2s ease; }
+  </style>
+</head>
+<body class="overflow-hidden w-screen h-screen">
+
+<div class="layout-grid">
+  
+  <header class="header-nav flex justify-between items-start pt-4">
+    <div class="text-xs uppercase tracking-[0.3em] font-medium leading-relaxed">
+      Panorama<br>空间建设全景图
+    </div>
+    <div class="flex gap-8 font-sans font-mono text-sm tracking-[0.1em]">
+      <button class="filter-btn active">所有项目</button>
+      <button class="filter-btn">前期准备阶段</button>
+      <button class="filter-btn">设计施工阶段</button>
+      <button class="filter-btn">运营阶段</button>
+    </div>
+  </header>
+
+  <main class="map-stage relative flex items-center justify-center">
+    <div class="w-full h-full bg-[#f3f4f5]/80 rounded-[40px] overflow-hidden relative shadow-[inset_0_0_40px_rgba(0,0,0,0.02)] border border-black/5" id="map-container">
+      <div class="absolute bottom-6 right-6 flex flex-col gap-[1px] bg-black border border-black rounded shadow-lg overflow-hidden z-[1000]">
+        <button id="zoom-in" class="zoom-btn border-none">+</button>
+        <div class="w-full h-[1px] bg-[#111111] opacity-20"></div>
+        <button id="zoom-out" class="zoom-btn border-none">−</button>
+      </div>
+    </div>
+  </main>
+
+  <aside class="sidebar-panel flex flex-col lg:pl-8 overflow-hidden">
+    <div class="font-sans text-[0.65rem] uppercase tracking-[0.4em] mb-2 text-[#777777] px-1">
+      项目概况 &nbsp; 总项目数：13项
+    </div>
+    
+    <div class="flex-1 overflow-y-auto pr-1 scrollbar-none" id="sidebar-list">
+      
+      <div class="section-divider" style="background-color: #D4C457; color: #111111; margin-bottom: 4px;">
+        <span>前期准备阶段</span>
+        <span>4项</span>
+      </div>
+
+      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-cgq-2026-1" data-status="active">
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-mono text-[10px] text-[#777777]">CGQ-2026-1</span>
+          <span class="status-badge badge-active">准备中</span>
+        </div>
+        <h4 class="font-sans font-mono text-lg">宏汇国际 Office</h4>
+        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">长春, CN</div>
+        <a href="cgq-2026-1.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+      </div>
+
+      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-wef-2026-2" data-status="active">
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-mono text-[10px] text-[#777777]">WEF-2026-2</span>
+          <span class="status-badge badge-active">准备中</span>
+        </div>
+        <h4 class="font-sans font-mono text-lg">光电一期1#餐厅 G-workshop</h4>
+        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">潍坊, CN</div>
+        <a href="wef-2026-2.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+      </div>
+
+      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-wef-2026-3" data-status="active">
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-mono text-[10px] text-[#777777]">WEF-2026-3</span>
+          <span class="status-badge badge-active">准备中</span>
+        </div>
+        <h4 class="font-sans font-mono text-lg">丹拿Lab 2 篮球场</h4>
+        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">潍坊, CN</div>
+        <a href="wef-2026-3.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+      </div>
+
+      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-pek-2026-1" data-status="active">
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-mono text-[10px] text-[#777777]">PEK-2026-1</span>
+          <span class="status-badge badge-active">准备中</span>
+        </div>
+        <h4 class="font-sans font-mono text-lg">致真大厦 Dotcom Space</h4>
+        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">北京, CN</div>
+        <a href="pek-2026-1.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+      </div>
+
+      <div class="section-divider" style="background-color: #E66665; color: #FFFFFF; margin-bottom: 4px;">
+        <span>设计施工阶段</span>
+        <span>7项</span>
+      </div>
+
+      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-wef-2026-4" data-status="completed">
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-mono text-[10px] text-[#777777]">WEF-2026-4</span>
+          <span class="status-badge badge-completed">进行中</span>
+        </div>
+        <h4 class="font-sans font-mono text-lg">歌尔小镇1号馆 2F空间更新</h4>
+        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">潍坊, CN</div>
+        <a href="wef-2026-4.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+      </div>
+
+      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-sh-2026-1" data-status="completed">
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-mono text-[10px] text-[#777777]">SH-2026-1</span>
+          <span class="status-badge badge-completed">进行中</span>
+        </div>
+        <h4 class="font-sans font-mono text-lg">XEO Camp</h4>
+        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">上海, CN</div>
+        <a href="sh-2026-1.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+      </div>
+
+      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-sh-2026-2" data-status="completed">
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-mono text-[10px] text-[#777777]">SH-2026-2</span>
+          <span class="status-badge badge-completed">进行中</span>
+        </div>
+        <h4 class="font-sans font-mono text-lg">歌尔国际创新中心</h4>
+        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">上海, CN</div>
+        <a href="sh-2026-2.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+      </div>
+
+      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-sh-2026-3" data-status="completed">
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-mono text-[10px] text-[#777777]">SH-2026-3</span>
+          <span class="status-badge badge-completed">进行中</span>
+        </div>
+        <h4 class="font-sans font-mono text-lg">洛克·外滩源 Dotcom</h4>
+        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">上海, CN</div>
+        <a href="sh-2026-3.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+      </div>
+
+      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-sh-2026-4" data-status="completed">
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-mono text-[10px] text-[#777777]">SH-2026-4</span>
+          <span class="status-badge badge-completed">进行中</span>
+        </div>
+        <h4 class="font-sans font-mono text-lg">哈密大楼 Dynaudio Lounge</h4>
+        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">上海, CN</div>
+        <a href="sh-2026-4.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+      </div>
+
+      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-can-2026-1" data-status="completed">
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-mono text-[10px] text-[#777777]">CAN-2026-1</span>
+          <span class="status-badge badge-completed">进行中</span>
+        </div>
+        <h4 class="font-sans font-mono text-lg">星海音乐厅 Terrace</h4>
+        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">广州, CN</div>
+        <a href="can-2026-1.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+      </div>
+
+      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-cph-2026-1" data-status="completed">
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-mono text-[10px] text-[#777777]">CPH-2026-1</span>
+          <span class="status-badge badge-completed">进行中</span>
+        </div>
+        <h4 class="font-sans font-mono text-lg">哥本哈根 Dynaudio Lounge</h4>
+        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">Copenhagen, DK</div>
+        <a href="cph-2026-1.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+      </div>
+
+      <div class="section-divider" style="background-color: #9DB3BF; color: #111111; margin-bottom: 4px;">
+        <span>运营阶段</span>
+        <span>2项</span>
+      </div>
+
+      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-cph-2026-2" data-status="archived">
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-mono text-[10px] text-[#777777]">CPH-2026-2</span>
+          <span class="status-badge badge-archived">运营中</span>
+        </div>
+        <h4 class="font-sans font-mono text-lg">哥本哈根 AML Office</h4>
+        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">Copenhagen, DK</div>
+        <a href="cph-2026-2.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+      </div>
+
+      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-wef-2026-1" data-status="archived">
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-mono text-[10px] text-[#777777]">WEF-2026-1</span>
+          <span class="status-badge badge-archived">运营中</span>
+        </div>
+        <h4 class="font-sans font-mono text-lg">电声一期生活区 7-11超市</h4>
+        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">潍坊, CN</div>
+        <a href="wef-2026-1.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+      </div>
+
+    </div>
+  </aside>
+
+</div>
+
+<script>
+  const projects = [
+    { id: "cgq-2026-1", displayId: "CGQ-2026-1", title: "宏汇国际 Office", coords: [43.879673, 125.324059], status: "active", location: "长春, CN" },
+    { id: "wef-2026-2", displayId: "WEF-2026-2", title: "光电一期1#餐厅 G-workshop", coords: [36.692158, 119.211700], status: "active", location: "潍坊, CN" },
+    { id: "wef-2026-3", displayId: "WEF-2026-3", title: "丹拿Lab 2 篮球场", coords: [36.701466, 119.232292], status: "active", location: "潍坊, CN" },
+    { id: "wef-2026-4", displayId: "WEF-2026-4", title: "歌尔小镇1号馆 2F空间更新", coords: [36.701466, 119.232292], status: "completed", location: "潍坊, CN" },
+    { id: "sh-2026-1", displayId: "SH-2026-1", title: "XEO Camp", coords: [31.183296, 121.609520], status: "completed", location: "上海, CN" },
+    { id: "sh-2026-2", displayId: "SH-2026-2", title: "歌尔国际创新中心", coords: [31.183296, 121.609520], status: "completed", location: "上海, CN" },
+    { id: "sh-2026-3", displayId: "SH-2026-3", title: "洛克·外滩源 Dotcom", coords: [31.242027, 121.487778], status: "completed", location: "上海, CN" },
+    { id: "sh-2026-4", displayId: "SH-2026-4", title: "哈密大楼 Dynaudio Lounge", coords: [31.241959, 121.487984], status: "completed", location: "上海, CN" },
+    { id: "can-2026-1", displayId: "CAN-2026-1", title: "星海音乐厅 Terrace", coords: [23.107748, 113.305679], status: "completed", location: "广州, CN" },
+    { id: "cph-2026-1", displayId: "CPH-2026-1", title: "哥本哈根 Dynaudio Lounge", coords: [55.682247, 12.579872], status: "completed", location: "Copenhagen, DK" },
+    { id: "pek-2026-1", displayId: "PEK-2026-1", title: "致真大厦 Dotcom Space", coords: [39.977341, 116.351555], status: "active", location: "北京, CN" },
+    { id: "wef-2026-1", displayId: "WEF-2026-1", title: "电声一期生活区 7-11超市", coords: [36.738430, 119.167160], status: "archived", location: "潍坊, CN" },
+    { id: "cph-2026-2", displayId: "CPH-2026-2", title: "哥本哈根 AML Office", coords: [55.681144, 12.589317], status: "archived", location: "Copenhagen, DK" }
+  ];
+
+  const map = L.map('map-container', {
+    zoomControl: false,
+    attributionControl: false,
+    minZoom: 2,
+    maxZoom: 12
+  });
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}{r}.png', {
+    subdomains: 'abcd',
+    maxZoom: 20
+  }).addTo(map);
+
+  const getColor = (status) => {
+    if (status === 'active') return '#D4C457';
+    if (status === 'completed') return '#E66665';
+    return '#9DB3BF'; 
+  };
+
+  const getStatusText = (status) => {
+    if (status === 'active') return '准备中';
+    if (status === 'completed') return '进行中';
+    return '运营中'; 
+  };
+
+  const statusMapping = {
+    '前期准备阶段': 'active',
+    '设计施工阶段': 'completed', 
+    '运营阶段': 'archived'
+  };
+
+  const markers = {};
+  const bounds = L.latLngBounds();
+
+  projects.forEach(project => {
+    const marker = L.circleMarker(project.coords, {
+      radius: 6,
+      fillColor: getColor(project.status),
+      color: 'transparent',
+      weight: 0,
+      fillOpacity: 1
+    }).addTo(map);
+
+    bounds.extend(project.coords);
+
+    const tooltipContent = `
+      <div class="tooltip-title">${project.title}</div>
+      <div class="tooltip-row"><span>ID:</span> <span>${project.displayId}</span></div>
+      <div class="tooltip-row"><span>Location:</span> <span>${project.location}</span></div>
+      <div class="tooltip-row"><span>Status:</span> <span>${getStatusText(project.status)}</span></div>
+    `;
+    
+    marker.bindTooltip(tooltipContent, {
+      direction: 'top',
+      className: 'custom-leaflet-tooltip',
+      offset: [0, -10],
+      opacity: 1
+    });
+
+    marker.on('mouseover', function() { this.setRadius(9); });
+    marker.on('mouseout', function() { this.setRadius(6); });
+    marker.on('click', () => { highlightSidebarItem(project.id); });
+
+    markers[project.id] = marker;
+  });
+
+  map.fitBounds(bounds.pad(0.2));
+
+  document.getElementById('zoom-in').addEventListener('click', (e) => {
+    e.stopPropagation();
+    map.zoomIn();
+  });
+  
+  document.getElementById('zoom-out').addEventListener('click', (e) => {
+    e.stopPropagation();
+    map.zoomOut();
+  });
+
+  function zoomToProject(id) {
+    const project = projects.find(p => p.id === id);
+    if (project) {
+      map.flyTo(project.coords, 8, { duration: 1.5 });
+    }
+  }
+
+  function highlightSidebarItem(projectId) {
+    const sidebar = document.getElementById('sidebar-list');
+    const projectCard = document.getElementById('project-' + projectId);
+    
+    if (projectCard && sidebar) {
+      projectCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      
+      document.querySelectorAll('.project-list-item').forEach(item => {
+        item.classList.remove('highlighted');
+      });
+      projectCard.classList.add('highlighted');
+      
+      setTimeout(() => {
+        projectCard.classList.remove('highlighted');
+      }, 2000);
+    }
+  }
+
+  function bindSidebarEvents() {
+    document.querySelectorAll('.project-list-item').forEach((item) => {
+      item.addEventListener('click', (e) => {
+        if (e.target.tagName === 'A') return;
+        const projectId = item.id.replace('project-', '');
+        zoomToProject(projectId);
+      });
+    });
+  }
+
+  bindSidebarEvents();
+
+  let currentFilter = 'ALL';
+
+  function setFilter(filterType, event) {
+    currentFilter = filterType;
+    document.querySelectorAll('.filter-btn').forEach(btn => { btn.classList.remove('active'); });
+    event.target.classList.add('active');
+    
+    updateSidebar(filterType);
+    updateMapMarkers(filterType);
+  }
+  
+  // 修正 JavaScript 动态渲染逻辑，移除负外边距并加上卡片内边距
+  function updateSidebar(filterType) {
+    const sidebar = document.getElementById('sidebar-list');
+    const projectOverview = document.querySelector('.sidebar-panel .font-sans');
+    
+    let filteredProjects = projects;
+    const englishStatus = statusMapping[filterType];
+    
+    if (filterType !== 'ALL' && englishStatus) {
+      filteredProjects = projects.filter(p => p.status === englishStatus);
+    }
+    
+    const totalCount = filteredProjects.length;
+    const overviewText = filterType === 'ALL' || filterType === '所有项目' ? '项目概况' : 
+                         filterType === '前期准备阶段' ? '前期准备阶段项目' : 
+                         filterType === '设计施工阶段' ? '设计施工阶段项目' : 
+                         filterType === '运营阶段' ? '运营阶段项目' : filterType;
+                         
+    projectOverview.innerHTML = `${overviewText} &nbsp;共${totalCount}项`;
+    
+    let html = '';
+    const isAll = filterType === 'ALL' || filterType === '所有项目';
+    const statusToFilter = statusMapping[filterType];
+    
+    if (isAll || statusToFilter === 'active') {
+      const activeProjects = isAll ? projects.filter(p => p.status === 'active') : filteredProjects;
+      if (activeProjects.length > 0) {
+        html += `
+          <div class="section-divider" style="background-color: #D4C457; color: #111111; margin-bottom: 4px;">
+            <span>前期准备阶段</span>
+            <span>${activeProjects.length}项</span>
+          </div>
+        `;
+        activeProjects.forEach(p => { html += createProjectCardHTML(p); });
+      }
+    }
+    
+    if (isAll || statusToFilter === 'completed') {
+      const completedProjects = isAll ? projects.filter(p => p.status === 'completed') : filteredProjects;
+      if (completedProjects.length > 0) {
+        html += `
+          <div class="section-divider" style="background-color: #E66665; color: #FFFFFF; margin-bottom: 4px; margin-top: 24px;">
+            <span>设计施工阶段</span>
+            <span>${completedProjects.length}项</span>
+          </div>
+        `;
+        completedProjects.forEach(p => { html += createProjectCardHTML(p); });
+      }
+    }
+    
+    if (isAll || statusToFilter === 'archived') {
+      const archivedProjects = isAll ? projects.filter(p => p.status === 'archived') : filteredProjects;
+      if (archivedProjects.length > 0) {
+        html += `
+          <div class="section-divider" style="background-color: #9DB3BF; color: #111111; margin-bottom: 4px; margin-top: 24px;">
+            <span>运营阶段</span>
+            <span>${archivedProjects.length}项</span>
+          </div>
+        `;
+        archivedProjects.forEach(p => { html += createProjectCardHTML(p); });
+      }
+    }
+    
+    sidebar.innerHTML = html;
+    bindSidebarEvents(); 
+  }
+  
+  function createProjectCardHTML(project) {
+    const statusText = project.status === 'active' ? '准备中' : project.status === 'completed' ? '进行中' : '运营中';
+    return `
+      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-${project.id}" data-status="${project.status}">
+        <div class="flex justify-between items-center mb-1">
+          <span class="font-mono text-[10px] text-[#777777]">${project.displayId}</span>
+          <span class="status-badge badge-${project.status}">${statusText}</span>
+        </div>
+        <h4 class="font-sans font-mono text-lg">${project.title}</h4>
+        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">${project.location}</div>
+        <a href="${project.id}.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+      </div>
+    `;
+  }
+  
+  function updateMapMarkers(filterType) {
+    const englishStatus = statusMapping[filterType];
+    const isAllFilter = filterType === 'ALL' || filterType === '所有项目';
+    
+    let activeBounds = L.latLngBounds();
+    let hasVisibleMarkers = false;
+
+    projects.forEach(p => {
+      const marker = markers[p.id];
+      if (isAllFilter || p.status === englishStatus) {
+        if (!map.hasLayer(marker)) map.addLayer(marker);
+        activeBounds.extend(p.coords);
+        hasVisibleMarkers = true;
+      } else {
+        if (map.hasLayer(marker)) map.removeLayer(marker);
+      }
+    });
+
+    if (hasVisibleMarkers) {
+      map.flyToBounds(activeBounds.pad(0.2), { duration: 1 });
+    }
+  }
+  
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const filterType = e.target.textContent;
+      setFilter(filterType, e);
+    });
+  });
+</script>
+
+</body>
+</html>
