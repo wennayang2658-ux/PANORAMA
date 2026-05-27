@@ -77,15 +77,45 @@
         display: flex;
         flex-direction: column;
         height: 100vh;
-        padding: 1.5rem;
-        gap: 1.5rem;
-        overflow-y: auto;
+        padding: 1.25rem;
+        gap: 1.25rem;
+        overflow: hidden; 
       }
       
-      .header-nav { order: 1; flex-shrink: 0; }
-      .map-stage { order: 2; flex-shrink: 0; height: 40vh; min-height: 300px; }
-      .sidebar-panel { order: 3; flex: 1; min-height: 0; padding-left: 0; padding-top: 0.5rem; }
-      .bottom-text { order: 4; flex-shrink: 0; }
+      .header-nav { 
+        order: 1; 
+        flex-shrink: 0; 
+      }
+
+      .map-stage { 
+        order: 2; 
+        flex-shrink: 0; 
+        height: 26vh; 
+        min-height: 200px; 
+        width: 100%; 
+      }
+
+      .sidebar-panel { 
+        order: 3; 
+        flex: 1; 
+        min-height: 0; 
+        padding-left: 0; 
+        padding-top: 0.25rem;
+        display: flex;
+        flex-direction: column;
+        overflow: hidden; 
+      }
+
+      #sidebar-list {
+        flex: 1;
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch; 
+      }
+
+      .bottom-text { 
+        order: 4; 
+        flex-shrink: 0; 
+      }
     }
 
     .project-list-item {
@@ -147,7 +177,7 @@
       display: flex;
       justify-content: space-between;
       letter-spacing: 0.1em;
-      border-radius: 6px; /* 增加精致的小圆角 */
+      border-radius: 6px; 
     }
 
     .leaflet-container {
@@ -194,18 +224,32 @@
     
     .tooltip-row span:last-child { color: #F1EFEB; text-align: right; }
     .leaflet-interactive { transition: r 0.2s ease; }
+
+    /* 新增：项目卡片右侧专用操作按钮样式 */
+    .enter-btn-zone {
+      border-left: 1px solid rgba(17, 17, 17, 0.05);
+      transition: all 0.2s ease;
+    }
+    
+    .project-list-item:hover .enter-btn-zone {
+      background: rgba(17, 17, 17, 0.03);
+      color: #111111;
+    }
+    
+    .enter-btn-zone:hover {
+      background: #111111 !important;
+      color: #F1EFEB !important;
+    }
   </style>
 </head>
 <body class="overflow-hidden w-screen h-screen">
 
 <div class="layout-grid">
   
-<header class="header-nav flex flex-col md:flex-row justify-between items-start pt-4 gap-4" vid="11">
-    <!-- 左侧标题：在手机端不至于太突兀 -->
+  <header class="header-nav flex flex-col md:flex-row justify-between items-start pt-4 gap-4" vid="11">
     <div class="text-xs uppercase tracking-[0.3em] font-medium leading-relaxed flex-shrink-0" vid="12">
       Panorama<br vid="13">空间全景图
     </div>
-    <!-- 右侧导航：手机端支持横向滑动，字不换行，隐藏滚动条 -->
     <div class="w-full md:w-auto flex gap-4 md:gap-8 font-sans font-mono text-sm tracking-[0.1em] overflow-x-auto whitespace-nowrap scrollbar-none py-1" vid="14">
       <button class="filter-btn active inline-block flex-shrink-0" vid="15">所有项目</button>
       <button class="filter-btn inline-block flex-shrink-0" vid="16">前期准备阶段</button>
@@ -236,44 +280,52 @@
         <span>4项</span>
       </div>
 
-      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-cgq-2026-1" data-status="active">
-        <div class="flex justify-between items-center mb-1">
-          <span class="font-mono text-[10px] text-[#777777]">CGQ-2026-1</span>
-          <span class="status-badge badge-active">准备中</span>
+      <div class="project-list-item flex my-2 cursor-pointer rounded-lg overflow-hidden" id="project-cgq-2026-1" data-status="active">
+        <div class="flex-1 py-4 pl-4 pr-2 flex flex-col justify-between">
+          <div>
+            <div class="font-mono text-[10px] text-[#777777] mb-1">CGQ-2026-1</div>
+            <h4 class="font-sans font-mono text-lg leading-snug">宏汇国际 Office</h4>
+            <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">长春, CN</div>
+          </div>
+          <div class="mt-4"><span class="status-badge badge-active">准备中</span></div>
         </div>
-        <h4 class="font-sans font-mono text-lg">宏汇国际 Office</h4>
-        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">长春, CN</div>
-        <a href="cgq-2026-1.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+        <a href="cgq-2026-1.html" class="enter-btn-zone w-20 flex flex-col items-center justify-center font-mono text-[10px] tracking-[0.2em] text-[#777777] font-bold">ENTER</a>
       </div>
 
-      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-wef-2026-2" data-status="active">
-        <div class="flex justify-between items-center mb-1">
-          <span class="font-mono text-[10px] text-[#777777]">WEF-2026-2</span>
-          <span class="status-badge badge-active">准备中</span>
+      <div class="project-list-item flex my-2 cursor-pointer rounded-lg overflow-hidden" id="project-wef-2026-2" data-status="active">
+        <div class="flex-1 py-4 pl-4 pr-2 flex flex-col justify-between">
+          <div>
+            <div class="font-mono text-[10px] text-[#777777] mb-1">WEF-2026-2</div>
+            <h4 class="font-sans font-mono text-lg leading-snug">光电一期1#餐厅 G-workshop</h4>
+            <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">潍坊, CN</div>
+          </div>
+          <div class="mt-4"><span class="status-badge badge-active">准备中</span></div>
         </div>
-        <h4 class="font-sans font-mono text-lg">光电一期1#餐厅 G-workshop</h4>
-        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">潍坊, CN</div>
-        <a href="wef-2026-2.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+        <a href="wef-2026-2.html" class="enter-btn-zone w-20 flex flex-col items-center justify-center font-mono text-[10px] tracking-[0.2em] text-[#777777] font-bold">ENTER</a>
       </div>
 
-      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-wef-2026-3" data-status="active">
-        <div class="flex justify-between items-center mb-1">
-          <span class="font-mono text-[10px] text-[#777777]">WEF-2026-3</span>
-          <span class="status-badge badge-active">准备中</span>
+      <div class="project-list-item flex my-2 cursor-pointer rounded-lg overflow-hidden" id="project-wef-2026-3" data-status="active">
+        <div class="flex-1 py-4 pl-4 pr-2 flex flex-col justify-between">
+          <div>
+            <div class="font-mono text-[10px] text-[#777777] mb-1">WEF-2026-3</div>
+            <h4 class="font-sans font-mono text-lg leading-snug">丹拿Lab 2 篮球场</h4>
+            <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">潍坊, CN</div>
+          </div>
+          <div class="mt-4"><span class="status-badge badge-active">准备中</span></div>
         </div>
-        <h4 class="font-sans font-mono text-lg">丹拿Lab 2 篮球场</h4>
-        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">潍坊, CN</div>
-        <a href="wef-2026-3.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+        <a href="wef-2026-3.html" class="enter-btn-zone w-20 flex flex-col items-center justify-center font-mono text-[10px] tracking-[0.2em] text-[#777777] font-bold">ENTER</a>
       </div>
 
-      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-pek-2026-1" data-status="active">
-        <div class="flex justify-between items-center mb-1">
-          <span class="font-mono text-[10px] text-[#777777]">PEK-2026-1</span>
-          <span class="status-badge badge-active">准备中</span>
+      <div class="project-list-item flex my-2 cursor-pointer rounded-lg overflow-hidden" id="project-pek-2026-1" data-status="active">
+        <div class="flex-1 py-4 pl-4 pr-2 flex flex-col justify-between">
+          <div>
+            <div class="font-mono text-[10px] text-[#777777] mb-1">PEK-2026-1</div>
+            <h4 class="font-sans font-mono text-lg leading-snug">致真大厦 Dotcom Space</h4>
+            <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">北京, CN</div>
+          </div>
+          <div class="mt-4"><span class="status-badge badge-active">准备中</span></div>
         </div>
-        <h4 class="font-sans font-mono text-lg">致真大厦 Dotcom Space</h4>
-        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">北京, CN</div>
-        <a href="pek-2026-1.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+        <a href="pek-2026-1.html" class="enter-btn-zone w-20 flex flex-col items-center justify-center font-mono text-[10px] tracking-[0.2em] text-[#777777] font-bold">ENTER</a>
       </div>
 
       <div class="section-divider" style="background-color: #E66665; color: #FFFFFF; margin-bottom: 4px;">
@@ -281,74 +333,88 @@
         <span>7项</span>
       </div>
 
-      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-wef-2026-4" data-status="completed">
-        <div class="flex justify-between items-center mb-1">
-          <span class="font-mono text-[10px] text-[#777777]">WEF-2026-4</span>
-          <span class="status-badge badge-completed">进行中</span>
+      <div class="project-list-item flex my-2 cursor-pointer rounded-lg overflow-hidden" id="project-wef-2026-4" data-status="completed">
+        <div class="flex-1 py-4 pl-4 pr-2 flex flex-col justify-between">
+          <div>
+            <div class="font-mono text-[10px] text-[#777777] mb-1">WEF-2026-4</div>
+            <h4 class="font-sans font-mono text-lg leading-snug">歌尔小镇1号馆 2F空间更新</h4>
+            <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">潍坊, CN</div>
+          </div>
+          <div class="mt-4"><span class="status-badge badge-completed">进行中</span></div>
         </div>
-        <h4 class="font-sans font-mono text-lg">歌尔小镇1号馆 2F空间更新</h4>
-        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">潍坊, CN</div>
-        <a href="wef-2026-4.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+        <a href="wef-2026-4.html" class="enter-btn-zone w-20 flex flex-col items-center justify-center font-mono text-[10px] tracking-[0.2em] text-[#777777] font-bold">ENTER</a>
       </div>
 
-      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-sh-2026-1" data-status="completed">
-        <div class="flex justify-between items-center mb-1">
-          <span class="font-mono text-[10px] text-[#777777]">SH-2026-1</span>
-          <span class="status-badge badge-completed">进行中</span>
+      <div class="project-list-item flex my-2 cursor-pointer rounded-lg overflow-hidden" id="project-sh-2026-1" data-status="completed">
+        <div class="flex-1 py-4 pl-4 pr-2 flex flex-col justify-between">
+          <div>
+            <div class="font-mono text-[10px] text-[#777777] mb-1">SH-2026-1</div>
+            <h4 class="font-sans font-mono text-lg leading-snug">XEO Camp</h4>
+            <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">上海, CN</div>
+          </div>
+          <div class="mt-4"><span class="status-badge badge-completed">进行中</span></div>
         </div>
-        <h4 class="font-sans font-mono text-lg">XEO Camp</h4>
-        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">上海, CN</div>
-        <a href="sh-2026-1.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+        <a href="sh-2026-1.html" class="enter-btn-zone w-20 flex flex-col items-center justify-center font-mono text-[10px] tracking-[0.2em] text-[#777777] font-bold">ENTER</a>
       </div>
 
-      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-sh-2026-2" data-status="completed">
-        <div class="flex justify-between items-center mb-1">
-          <span class="font-mono text-[10px] text-[#777777]">SH-2026-2</span>
-          <span class="status-badge badge-completed">进行中</span>
+      <div class="project-list-item flex my-2 cursor-pointer rounded-lg overflow-hidden" id="project-sh-2026-2" data-status="completed">
+        <div class="flex-1 py-4 pl-4 pr-2 flex flex-col justify-between">
+          <div>
+            <div class="font-mono text-[10px] text-[#777777] mb-1">SH-2026-2</div>
+            <h4 class="font-sans font-mono text-lg leading-snug">歌尔国际创新中心</h4>
+            <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">上海, CN</div>
+          </div>
+          <div class="mt-4"><span class="status-badge badge-completed">进行中</span></div>
         </div>
-        <h4 class="font-sans font-mono text-lg">歌尔国际创新中心</h4>
-        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">上海, CN</div>
-        <a href="sh-2026-2.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+        <a href="sh-2026-2.html" class="enter-btn-zone w-20 flex flex-col items-center justify-center font-mono text-[10px] tracking-[0.2em] text-[#777777] font-bold">ENTER</a>
       </div>
 
-      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-sh-2026-3" data-status="completed">
-        <div class="flex justify-between items-center mb-1">
-          <span class="font-mono text-[10px] text-[#777777]">SH-2026-3</span>
-          <span class="status-badge badge-completed">进行中</span>
+      <div class="project-list-item flex my-2 cursor-pointer rounded-lg overflow-hidden" id="project-sh-2026-3" data-status="completed">
+        <div class="flex-1 py-4 pl-4 pr-2 flex flex-col justify-between">
+          <div>
+            <div class="font-mono text-[10px] text-[#777777] mb-1">SH-2026-3</div>
+            <h4 class="font-sans font-mono text-lg leading-snug">洛克·外滩源 Dotcom</h4>
+            <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">上海, CN</div>
+          </div>
+          <div class="mt-4"><span class="status-badge badge-completed">进行中</span></div>
         </div>
-        <h4 class="font-sans font-mono text-lg">洛克·外滩源 Dotcom</h4>
-        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">上海, CN</div>
-        <a href="sh-2026-3.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+        <a href="sh-2026-3.html" class="enter-btn-zone w-20 flex flex-col items-center justify-center font-mono text-[10px] tracking-[0.2em] text-[#777777] font-bold">ENTER</a>
       </div>
 
-      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-sh-2026-4" data-status="completed">
-        <div class="flex justify-between items-center mb-1">
-          <span class="font-mono text-[10px] text-[#777777]">SH-2026-4</span>
-          <span class="status-badge badge-completed">进行中</span>
+      <div class="project-list-item flex my-2 cursor-pointer rounded-lg overflow-hidden" id="project-sh-2026-4" data-status="completed">
+        <div class="flex-1 py-4 pl-4 pr-2 flex flex-col justify-between">
+          <div>
+            <div class="font-mono text-[10px] text-[#777777] mb-1">SH-2026-4</div>
+            <h4 class="font-sans font-mono text-lg leading-snug">哈密大楼 Dynaudio Lounge</h4>
+            <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">上海, CN</div>
+          </div>
+          <div class="mt-4"><span class="status-badge badge-completed">进行中</span></div>
         </div>
-        <h4 class="font-sans font-mono text-lg">哈密大楼 Dynaudio Lounge</h4>
-        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">上海, CN</div>
-        <a href="sh-2026-4.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+        <a href="sh-2026-4.html" class="enter-btn-zone w-20 flex flex-col items-center justify-center font-mono text-[10px] tracking-[0.2em] text-[#777777] font-bold">ENTER</a>
       </div>
 
-      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-can-2026-1" data-status="completed">
-        <div class="flex justify-between items-center mb-1">
-          <span class="font-mono text-[10px] text-[#777777]">CAN-2026-1</span>
-          <span class="status-badge badge-completed">进行中</span>
+      <div class="project-list-item flex my-2 cursor-pointer rounded-lg overflow-hidden" id="project-can-2026-1" data-status="completed">
+        <div class="flex-1 py-4 pl-4 pr-2 flex flex-col justify-between">
+          <div>
+            <div class="font-mono text-[10px] text-[#777777] mb-1">CAN-2026-1</div>
+            <h4 class="font-sans font-mono text-lg leading-snug">星海音乐厅 Terrace</h4>
+            <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">广州, CN</div>
+          </div>
+          <div class="mt-4"><span class="status-badge badge-completed">进行中</span></div>
         </div>
-        <h4 class="font-sans font-mono text-lg">星海音乐厅 Terrace</h4>
-        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">广州, CN</div>
-        <a href="can-2026-1.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+        <a href="can-2026-1.html" class="enter-btn-zone w-20 flex flex-col items-center justify-center font-mono text-[10px] tracking-[0.2em] text-[#777777] font-bold">ENTER</a>
       </div>
 
-      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-cph-2026-1" data-status="completed">
-        <div class="flex justify-between items-center mb-1">
-          <span class="font-mono text-[10px] text-[#777777]">CPH-2026-1</span>
-          <span class="status-badge badge-completed">进行中</span>
+      <div class="project-list-item flex my-2 cursor-pointer rounded-lg overflow-hidden" id="project-cph-2026-1" data-status="completed">
+        <div class="flex-1 py-4 pl-4 pr-2 flex flex-col justify-between">
+          <div>
+            <div class="font-mono text-[10px] text-[#777777] mb-1">CPH-2026-1</div>
+            <h4 class="font-sans font-mono text-lg leading-snug">哥本哈根 Dynaudio Lounge</h4>
+            <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">Copenhagen, DK</div>
+          </div>
+          <div class="mt-4"><span class="status-badge badge-completed">进行中</span></div>
         </div>
-        <h4 class="font-sans font-mono text-lg">哥本哈根 Dynaudio Lounge</h4>
-        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">Copenhagen, DK</div>
-        <a href="cph-2026-1.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+        <a href="cph-2026-1.html" class="enter-btn-zone w-20 flex flex-col items-center justify-center font-mono text-[10px] tracking-[0.2em] text-[#777777] font-bold">ENTER</a>
       </div>
 
       <div class="section-divider" style="background-color: #9DB3BF; color: #111111; margin-bottom: 4px;">
@@ -356,24 +422,28 @@
         <span>2项</span>
       </div>
 
-      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-cph-2026-2" data-status="archived">
-        <div class="flex justify-between items-center mb-1">
-          <span class="font-mono text-[10px] text-[#777777]">CPH-2026-2</span>
-          <span class="status-badge badge-archived">运营中</span>
+      <div class="project-list-item flex my-2 cursor-pointer rounded-lg overflow-hidden" id="project-cph-2026-2" data-status="archived">
+        <div class="flex-1 py-4 pl-4 pr-2 flex flex-col justify-between">
+          <div>
+            <div class="font-mono text-[10px] text-[#777777] mb-1">CPH-2026-2</div>
+            <h4 class="font-sans font-mono text-lg leading-snug">哥本哈根 AML Office</h4>
+            <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">Copenhagen, DK</div>
+          </div>
+          <div class="mt-4"><span class="status-badge badge-archived">运营中</span></div>
         </div>
-        <h4 class="font-sans font-mono text-lg">哥本哈根 AML Office</h4>
-        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">Copenhagen, DK</div>
-        <a href="cph-2026-2.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+        <a href="cph-2026-2.html" class="enter-btn-zone w-20 flex flex-col items-center justify-center font-mono text-[10px] tracking-[0.2em] text-[#777777] font-bold">ENTER</a>
       </div>
 
-      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-wef-2026-1" data-status="archived">
-        <div class="flex justify-between items-center mb-1">
-          <span class="font-mono text-[10px] text-[#777777]">WEF-2026-1</span>
-          <span class="status-badge badge-archived">运营中</span>
+      <div class="project-list-item flex my-2 cursor-pointer rounded-lg overflow-hidden" id="project-wef-2026-1" data-status="archived">
+        <div class="flex-1 py-4 pl-4 pr-2 flex flex-col justify-between">
+          <div>
+            <div class="font-mono text-[10px] text-[#777777] mb-1">WEF-2026-1</div>
+            <h4 class="font-sans font-mono text-lg leading-snug">电声一期生活区 7-11超市</h4>
+            <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">潍坊, CN</div>
+          </div>
+          <div class="mt-4"><span class="status-badge badge-archived">运营中</span></div>
         </div>
-        <h4 class="font-sans font-mono text-lg">电声一期生活区 7-11超市</h4>
-        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">潍坊, CN</div>
-        <a href="wef-2026-1.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+        <a href="wef-2026-1.html" class="enter-btn-zone w-20 flex flex-col items-center justify-center font-mono text-[10px] tracking-[0.2em] text-[#777777] font-bold">ENTER</a>
       </div>
 
     </div>
@@ -405,12 +475,12 @@
     maxZoom: 12
   });
 
-L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/light-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiemVsbGF5YW5nMzA5IiwiYSI6ImNrMzAzeHhvcTBmMWwzZHFqcmY5Y2x3YTMifQ.pNmEfDjDQSy4C3HEWjQSwg', {
-  tileSize: 512,
-  zoomOffset: -1,
-  maxZoom: 18,
-  attribution: ''
-}).addTo(map);
+  L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/light-v11/tiles/{z}/{x}/{y}?access_token=pk.eyJ1IjoiemVsbGF5YW5nMzA5IiwiYSI6ImNrMzAzeHhvcTBmMWwzZHFqcmY5Y2x3YTMifQ.pNmEfDjDQSy4C3HEWjQSwg', {
+    tileSize: 512,
+    zoomOffset: -1,
+    maxZoom: 18,
+    attribution: ''
+  }).addTo(map);
 
   const getColor = (status) => {
     if (status === 'active') return '#D4C457';
@@ -525,7 +595,6 @@ L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/light-v11/tiles/{z}/{x}/{y}
     updateMapMarkers(filterType);
   }
   
-  // 修正 JavaScript 动态渲染逻辑，移除负外边距并加上卡片内边距
   function updateSidebar(filterType) {
     const sidebar = document.getElementById('sidebar-list');
     const projectOverview = document.querySelector('.sidebar-panel .font-sans');
@@ -592,17 +661,24 @@ L.tileLayer('https://api.mapbox.com/styles/v1/mapbox/light-v11/tiles/{z}/{x}/{y}
     bindSidebarEvents(); 
   }
   
+  // 新修：动态构建卡片 HTML 的核心函数
   function createProjectCardHTML(project) {
     const statusText = project.status === 'active' ? '准备中' : project.status === 'completed' ? '进行中' : '运营中';
     return `
-      <div class="project-list-item py-4 px-4 cursor-pointer rounded-lg" id="project-${project.id}" data-status="${project.status}">
-        <div class="flex justify-between items-center mb-1">
-          <span class="font-mono text-[10px] text-[#777777]">${project.displayId}</span>
-          <span class="status-badge badge-${project.status}">${statusText}</span>
+      <div class="project-list-item flex my-2 cursor-pointer rounded-lg overflow-hidden bg-transparent border border-transparent hover:border-black/5" id="project-${project.id}" data-status="${project.status}">
+        <div class="flex-1 py-4 pl-4 pr-2 flex flex-col justify-between">
+          <div>
+            <div class="font-mono text-[10px] text-[#777777] mb-1">${project.displayId}</div>
+            <h4 class="font-sans font-mono text-lg leading-snug">${project.title}</h4>
+            <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">${project.location}</div>
+          </div>
+          <div class="mt-4">
+            <span class="status-badge badge-${project.status}">${statusText}</span>
+          </div>
         </div>
-        <h4 class="font-sans font-mono text-lg">${project.title}</h4>
-        <div class="mt-1 font-mono text-[10px] text-[#999999] tracking-wide">${project.location}</div>
-        <a href="${project.id}.html" class="mt-3 text-[10px] font-mono tracking-[0.1em] text-[#777777] hover:text-[#111111] transition-colors underline underline-offset-4 inline-block">项目详情</a>
+        <a href="${project.id}.html" class="enter-btn-zone w-20 flex flex-col items-center justify-center font-mono text-[10px] tracking-[0.2em] text-[#777777] font-bold no-underline flex-shrink-0">
+          ENTER
+        </a>
       </div>
     `;
   }
